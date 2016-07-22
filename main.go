@@ -34,7 +34,8 @@ var (
 func cmd_url(db *sql.DB, url string) {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", url, nil)
+	// TODO Full url encoding
+	req, err := http.NewRequest("GET", strings.Replace(url, " ", "%20", -1), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
