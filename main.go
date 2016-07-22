@@ -9,27 +9,32 @@
 package main
 
 import (
+	"bytes"
+	"database/sql"
+	"strings"
+
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
+	"./storage"
+
 	"github.com/jaytaylor/html2text"
+	"golang.org/x/net/html"
 	"golang.org/x/net/html/charset"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	url = kingpin.Flag("url", "Url").String()
+	arg_url  = kingpin.Flag("url", "Url").String()
+	arg_link = kingpin.Flag("link", "Link").Int()
 )
 
-func main() {
-
-	kingpin.Parse()
-
+func cmd_url(db *sql.DB, url string) {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", *url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -55,10 +60,72 @@ func main() {
 		return
 	}
 
-	text, err := html2text.FromString(string(body))
+	htmlPage := string(body)
+
+	z := html.NewTokenizer(bytes.NewReader(body))
+
+	for {
+		tt := z.Next()
+		if tt == html.ErrorToken {
+			break
+		}
+
+		for {
+			key, value, moreAttr := z.TagAttr()
+
+			if string(key) == "href" {
+
+				url, err := req.URL.Parse(string(value))
+				if err != nil {
+					panic(err)
+				}
+
+				linkNo, err := storage.AddLink(db, url.String())
+				if err != nil {
+					panic(err)
+				}
+
+				for _, s := range []string{string(value), html.EscapeString(string(value))} {
+					htmlPage = strings.Replace(htmlPage, "\""+s+"\"",
+						"\""+fmt.Sprintf("%d", linkNo)+"\"", -1)
+				}
+			}
+
+			if !moreAttr {
+				break
+			}
+		}
+	}
+
+	text, err := html2text.FromString(htmlPage)
+	if err != nil {
+		panic(err)
+	}
+	text += ""
+
+	fmt.Println(text)
+}
+
+func cmd_link(db *sql.DB, linkID int) {
+	url, err := storage.GetLink(db, linkID)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(text)
+	cmd_url(db, url)
+}
+
+func main() {
+	db, err := storage.OpenDB("/tmp/wi.db")
+	if err != nil {
+		panic(err)
+	}
+
+	kingpin.Parse()
+
+	if *arg_url != "" {
+		cmd_url(db, *arg_url)
+	} else if *arg_link != 0 {
+		cmd_link(db, *arg_link)
+	}
 }
