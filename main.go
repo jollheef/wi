@@ -18,7 +18,7 @@ import (
 	"log"
 	"net/http"
 
-	"./storage"
+	"github.com/jollheef/wi/storage"
 
 	"github.com/jaytaylor/html2text"
 	"golang.org/x/net/html"
