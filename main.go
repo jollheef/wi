@@ -27,8 +27,14 @@ import (
 )
 
 var (
-	arg_url  = kingpin.Flag("url", "Url").String()
-	arg_link = kingpin.Flag("link", "Link").Int64()
+	get    = kingpin.Command("get", "Get url")
+	getUrl = get.Arg("url", "Url").Required().String()
+
+	link   = kingpin.Command("link", "Get link")
+	linkNo = link.Arg("no", "Number").Required().Int64()
+
+	historyList      = kingpin.Command("history", "List history")
+	historyListItems = historyList.Arg("items", "Amount of items").Int64()
 )
 
 func parseLink(db *sql.DB, oldPage, value string, req *http.Request) (htmlPage string, err error) {
@@ -141,12 +147,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer db.Close()
 
-	kingpin.Parse()
-
-	if *arg_url != "" {
-		cmd_url(db, *arg_url)
-	} else if *arg_link != 0 {
-		cmd_link(db, *arg_link)
+	switch kingpin.Parse() {
+	case "get":
+		cmd_url(db, *getUrl)
+	case "link":
+		cmd_link(db, *linkNo)
+	case "history":
+		fmt.Println("not implemented")
 	}
 }
