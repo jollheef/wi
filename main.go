@@ -31,6 +31,58 @@ var (
 	arg_link = kingpin.Flag("link", "Link").Int64()
 )
 
+func parseLink(db *sql.DB, oldPage, value string, req *http.Request) (htmlPage string, err error) {
+	url, err := req.URL.Parse(value)
+	if err != nil {
+		return
+	}
+
+	linkNo, err := storage.GetLinkID(db, url.String())
+	if err != nil {
+		linkNo, err = storage.AddLink(db, url.String())
+		if err != nil {
+			return
+		}
+	}
+
+	for _, s := range []string{value, html.EscapeString(value)} {
+		htmlPage = strings.Replace(oldPage, "\""+s+"\"",
+			"\""+fmt.Sprintf("%d", linkNo)+"\"", -1)
+	}
+
+	return
+}
+
+func parseLinks(db *sql.DB, body []byte, req *http.Request) (htmlPage string, err error) {
+	htmlPage = string(body)
+
+	z := html.NewTokenizer(bytes.NewReader(body))
+
+	for {
+		tt := z.Next()
+		if tt == html.ErrorToken {
+			break
+		}
+
+		for {
+			key, value, moreAttr := z.TagAttr()
+
+			if string(key) == "href" {
+				htmlPage, err = parseLink(db, htmlPage, string(value), req)
+				if err != nil {
+					return
+				}
+			}
+
+			if !moreAttr {
+				break
+			}
+		}
+	}
+
+	return
+}
+
 func cmd_url(db *sql.DB, url string) {
 	client := &http.Client{}
 
@@ -61,44 +113,9 @@ func cmd_url(db *sql.DB, url string) {
 		return
 	}
 
-	htmlPage := string(body)
-
-	z := html.NewTokenizer(bytes.NewReader(body))
-
-	for {
-		tt := z.Next()
-		if tt == html.ErrorToken {
-			break
-		}
-
-		for {
-			key, value, moreAttr := z.TagAttr()
-
-			if string(key) == "href" {
-
-				url, err := req.URL.Parse(string(value))
-				if err != nil {
-					panic(err)
-				}
-
-				linkNo, err := storage.GetLinkID(db, url.String())
-				if err != nil {
-					linkNo, err = storage.AddLink(db, url.String())
-					if err != nil {
-						panic(err)
-					}
-				}
-
-				for _, s := range []string{string(value), html.EscapeString(string(value))} {
-					htmlPage = strings.Replace(htmlPage, "\""+s+"\"",
-						"\""+fmt.Sprintf("%d", linkNo)+"\"", -1)
-				}
-			}
-
-			if !moreAttr {
-				break
-			}
-		}
+	htmlPage, err := parseLinks(db, body, req)
+	if err != nil {
+		panic(err)
 	}
 
 	text, err := html2text.FromString(htmlPage)
