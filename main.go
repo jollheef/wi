@@ -28,7 +28,7 @@ import (
 
 var (
 	arg_url  = kingpin.Flag("url", "Url").String()
-	arg_link = kingpin.Flag("link", "Link").Int()
+	arg_link = kingpin.Flag("link", "Link").Int64()
 )
 
 func cmd_url(db *sql.DB, url string) {
@@ -81,9 +81,12 @@ func cmd_url(db *sql.DB, url string) {
 					panic(err)
 				}
 
-				linkNo, err := storage.AddLink(db, url.String())
+				linkNo, err := storage.GetLinkID(db, url.String())
 				if err != nil {
-					panic(err)
+					linkNo, err = storage.AddLink(db, url.String())
+					if err != nil {
+						panic(err)
+					}
 				}
 
 				for _, s := range []string{string(value), html.EscapeString(string(value))} {
@@ -107,7 +110,7 @@ func cmd_url(db *sql.DB, url string) {
 	fmt.Println(text)
 }
 
-func cmd_link(db *sql.DB, linkID int) {
+func cmd_link(db *sql.DB, linkID int64) {
 	url, err := storage.GetLink(db, linkID)
 	if err != nil {
 		panic(err)

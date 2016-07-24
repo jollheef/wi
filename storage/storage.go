@@ -42,7 +42,7 @@ func AddLink(db *sql.DB, url string) (linkNo int64, err error) {
 	return
 }
 
-func GetLink(db *sql.DB, linkID int) (url string, err error) {
+func GetLink(db *sql.DB, linkID int64) (url string, err error) {
 	stmt, err := db.Prepare("SELECT `url` FROM `links` WHERE id=$1;")
 	if err != nil {
 		return
@@ -50,6 +50,18 @@ func GetLink(db *sql.DB, linkID int) (url string, err error) {
 	defer stmt.Close()
 
 	err = stmt.QueryRow(linkID).Scan(&url)
+
+	return
+}
+
+func GetLinkID(db *sql.DB, url string) (linkID int64, err error) {
+	stmt, err := db.Prepare("SELECT `id` FROM `links` WHERE url=$1;")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(url).Scan(&linkID)
 
 	return
 }
