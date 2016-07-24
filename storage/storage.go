@@ -21,6 +21,12 @@ func OpenDB(path string) (db *sql.DB, err error) {
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS `links` " +
 		"( `id` INTEGER PRIMARY KEY AUTOINCREMENT, `url` TEXT );")
+	if err != nil {
+		return
+	}
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS `history` " +
+		"( `id` INTEGER PRIMARY KEY AUTOINCREMENT, `url` TEXT );")
 
 	return
 }
@@ -62,6 +68,44 @@ func GetLinkID(db *sql.DB, url string) (linkID int64, err error) {
 	defer stmt.Close()
 
 	err = stmt.QueryRow(url).Scan(&linkID)
+
+	return
+}
+
+func AddHistoryURL(db *sql.DB, url string) (err error) {
+	stmt, err := db.Prepare("INSERT INTO `history` (`url`) VALUES ($1);")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(url)
+
+	return
+}
+
+type HistoryItem struct {
+	ID  int64
+	URL string
+}
+
+func GetHistory(db *sql.DB) (history []HistoryItem, err error) {
+	rows, err := db.Query("SELECT `id`, `url` FROM `history`;")
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var h HistoryItem
+
+		err = rows.Scan(&h.ID, &h.URL)
+		if err != nil {
+			return
+		}
+
+		history = append(history, h)
+	}
 
 	return
 }

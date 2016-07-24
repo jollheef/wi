@@ -35,6 +35,7 @@ var (
 
 	historyList      = kingpin.Command("history", "List history")
 	historyListItems = historyList.Arg("items", "Amount of items").Int64()
+	historyListAll   = historyList.Flag("all", "Show all items").Bool()
 )
 
 func parseLink(db *sql.DB, oldPage, value string, req *http.Request) (htmlPage string, err error) {
@@ -90,6 +91,8 @@ func parseLinks(db *sql.DB, body []byte, req *http.Request) (htmlPage string, er
 }
 
 func cmd_url(db *sql.DB, url string) {
+	storage.AddHistoryURL(db, url)
+
 	client := &http.Client{}
 
 	// TODO Full url encoding
@@ -142,6 +145,35 @@ func cmd_link(db *sql.DB, linkID int64) {
 	cmd_url(db, url)
 }
 
+func cmd_history(db *sql.DB, argAmount, defaultAmount int64, all bool) {
+	history, err := storage.GetHistory(db)
+	if err != nil {
+		panic(err)
+	}
+
+	var amount int64
+
+	if all {
+		amount = int64(len(history))
+	} else if argAmount == 0 {
+		if int64(len(history)) < defaultAmount {
+			amount = int64(len(history))
+		} else {
+			amount = defaultAmount
+		}
+	} else {
+		if amount > int64(len(history)) {
+			amount = int64(len(history))
+		} else {
+			amount = argAmount
+		}
+	}
+
+	for _, h := range history[int64(len(history))-amount:] {
+		fmt.Println(h.ID, h.URL)
+	}
+}
+
 func main() {
 	db, err := storage.OpenDB("/tmp/wi.db")
 	if err != nil {
@@ -155,6 +187,6 @@ func main() {
 	case "link":
 		cmd_link(db, *linkNo)
 	case "history":
-		fmt.Println("not implemented")
+		cmd_history(db, *historyListItems, 20, *historyListAll)
 	}
 }
