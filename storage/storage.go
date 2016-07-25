@@ -109,3 +109,15 @@ func GetHistory(db *sql.DB) (history []HistoryItem, err error) {
 
 	return
 }
+
+func GetHistoryUrl(db *sql.DB, historyID int64) (url string, err error) {
+	stmt, err := db.Prepare("SELECT `url` FROM `history` WHERE id=$1;")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(historyID).Scan(&url)
+
+	return
+}

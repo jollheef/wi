@@ -19,8 +19,9 @@ var (
 	get    = kingpin.Command("get", "Get url")
 	getUrl = get.Arg("url", "Url").Required().String()
 
-	link   = kingpin.Command("link", "Get link")
-	linkNo = link.Arg("no", "Number").Required().Int64()
+	link            = kingpin.Command("link", "Get link")
+	linkNo          = link.Arg("no", "Number").Required().Int64()
+	linkFromHistory = link.Flag("history", "Item from history").Bool()
 
 	historyList      = kingpin.Command("history", "List history")
 	historyListItems = historyList.Arg("items", "Amount of items").Int64()
@@ -38,7 +39,7 @@ func main() {
 	case "get":
 		commands.Get(db, *getUrl)
 	case "link":
-		commands.Link(db, *linkNo)
+		commands.Link(db, *linkNo, *linkFromHistory)
 	case "history":
 		commands.History(db, *historyListItems, 20, *historyListAll)
 	}

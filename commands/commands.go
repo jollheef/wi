@@ -126,8 +126,17 @@ func Get(db *sql.DB, url string) {
 	fmt.Println(text)
 }
 
-func Link(db *sql.DB, linkID int64) {
-	url, err := storage.GetLink(db, linkID)
+func Link(db *sql.DB, linkID int64, fromHistory bool) {
+
+	var url string
+	var err error
+
+	if fromHistory {
+		url, err = storage.GetHistoryUrl(db, linkID)
+	} else {
+		url, err = storage.GetLink(db, linkID)
+	}
+
 	if err != nil {
 		panic(err)
 	}
