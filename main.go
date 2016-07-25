@@ -93,6 +93,10 @@ func parseLinks(db *sql.DB, body []byte, req *http.Request) (htmlPage string, er
 func cmd_url(db *sql.DB, url string) {
 	client := &http.Client{}
 
+	if !strings.Contains(url, "://") {
+		url = "http://" + url
+	}
+
 	// TODO Full url encoding
 	req, err := http.NewRequest("GET", strings.Replace(url, " ", "%20", -1), nil)
 	if err != nil {
