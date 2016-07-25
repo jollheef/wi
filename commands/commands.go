@@ -38,8 +38,10 @@ func parseLink(db *sql.DB, oldPage, value string, req *http.Request) (htmlPage s
 		}
 	}
 
+	htmlPage = oldPage
+
 	for _, s := range []string{value, html.EscapeString(value)} {
-		htmlPage = strings.Replace(oldPage, "\""+s+"\"",
+		htmlPage = strings.Replace(htmlPage, "\""+s+"\"",
 			"\""+fmt.Sprintf("%d", linkNo)+"\"", -1)
 	}
 
