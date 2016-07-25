@@ -91,8 +91,6 @@ func parseLinks(db *sql.DB, body []byte, req *http.Request) (htmlPage string, er
 }
 
 func cmd_url(db *sql.DB, url string) {
-	storage.AddHistoryURL(db, url)
-
 	client := &http.Client{}
 
 	// TODO Full url encoding
@@ -107,6 +105,8 @@ func cmd_url(db *sql.DB, url string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	storage.AddHistoryURL(db, url)
 
 	defer resp.Body.Close()
 
