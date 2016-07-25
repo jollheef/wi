@@ -102,24 +102,22 @@ func Get(db *sql.DB, url string) {
 
 	utf8, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
 	if err != nil {
-		fmt.Println("Encoding error:", err)
-		return
+		log.Fatalln("Encoding error:", err)
 	}
 
 	body, err := ioutil.ReadAll(utf8)
 	if err != nil {
-		fmt.Println("IO error:", err)
-		return
+		log.Fatalln("IO error:", err)
 	}
 
 	htmlPage, err := parseLinks(db, body, req)
 	if err != nil {
-		panic(err)
+		log.Fatalln("Parse links error:", err)
 	}
 
 	text, err := html2text.FromString(htmlPage)
 	if err != nil {
-		panic(err)
+		log.Fatalln("Html to text error:", err)
 	}
 	text += ""
 
@@ -138,7 +136,7 @@ func Link(db *sql.DB, linkID int64, fromHistory bool) {
 	}
 
 	if err != nil {
-		panic(err)
+		log.Fatalln("Get link/history url error:", err)
 	}
 
 	Get(db, url)
@@ -147,7 +145,7 @@ func Link(db *sql.DB, linkID int64, fromHistory bool) {
 func History(db *sql.DB, argAmount, defaultAmount int64, all bool) {
 	history, err := storage.GetHistory(db)
 	if err != nil {
-		panic(err)
+		log.Fatalln("Get history error:", err)
 	}
 
 	var amount int64
