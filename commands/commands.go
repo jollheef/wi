@@ -82,7 +82,7 @@ func Get(db *sql.DB, url string) {
 	client := &http.Client{}
 
 	if !strings.Contains(url, "://") {
-		url = "http://" + url
+		url = "https://" + url
 	}
 
 	// TODO Full url encoding
