@@ -3,6 +3,7 @@
  * @author Mikhail Klementyev jollheef<AT>riseup.net
  * @license GNU GPLv3
  * @date July, 2016
+ * @brief Command line options ('wi (get|link|...)')
  */
 
 package commands
