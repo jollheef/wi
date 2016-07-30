@@ -9,11 +9,34 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/jollheef/wi/commands"
 	"github.com/jollheef/wi/storage"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
+
+type searchList []string
+
+func (l *searchList) Set(value string) (err error) {
+	*l = append(*l, value)
+	return
+}
+
+func (l *searchList) String() (s string) {
+	return ""
+}
+
+func (l *searchList) IsCumulative() bool {
+	return true
+}
+
+func SearchList(settings kingpin.Settings) (target *[]string) {
+	target = new([]string)
+	settings.SetValue((*searchList)(target))
+	return
+}
 
 var (
 	get    = kingpin.Command("get", "Get url")
@@ -26,6 +49,9 @@ var (
 	historyList      = kingpin.Command("history", "List history")
 	historyListItems = historyList.Arg("items", "Amount of items").Int64()
 	historyListAll   = historyList.Flag("all", "Show all items").Bool()
+
+	search     = kingpin.Command("search", "Search engine (google by default)")
+	searchArgs = SearchList(search.Arg("string", "String for search"))
 )
 
 func main() {
@@ -42,5 +68,8 @@ func main() {
 		commands.Link(db, *linkNo, *linkFromHistory)
 	case "history":
 		commands.History(db, *historyListItems, 20, *historyListAll)
+	case "search":
+		// FIXME: currenlty supports only Google
+		commands.Get(db, "google.com/search?q="+strings.Join(*searchArgs, "+"))
 	}
 }
