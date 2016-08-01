@@ -139,6 +139,10 @@ func Get(db *sql.DB, linkUrl string) {
 	fmt.Println(text)
 }
 
+func Post(db *sql.DB, formID int64, formArgs []string) {
+	fmt.Println("Not implemented")
+}
+
 func Link(db *sql.DB, linkID int64, fromHistory bool) {
 
 	var linkUrl string
