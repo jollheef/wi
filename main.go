@@ -76,6 +76,6 @@ func main() {
 		commands.History(db, *historyListItems, 20, *historyListAll)
 	case "search":
 		// FIXME: currenlty supports only Google
-		commands.Get(db, "google.com/search?q="+strings.Join(*searchArgs, "+"))
+		commands.Get(db, "https://google.com/search?q="+strings.Join(*searchArgs, "+"))
 	}
 }
