@@ -96,6 +96,41 @@ func fixForms(db *sql.DB, doc *goquery.Document, pageUrl *url.URL) (err error) {
 	return
 }
 
+func handleResponse(db *sql.DB, resp *http.Response, lastUrl *url.URL) {
+	utf8, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
+	if err != nil {
+		log.Fatalln("Encoding error:", err)
+	}
+
+	doc, err := goquery.NewDocumentFromReader(utf8)
+	if err != nil {
+		log.Fatalln("Create document error:", err)
+	}
+
+	err = fixLinks(db, doc, lastUrl)
+	if err != nil {
+		log.Fatalln("Fix links error:", err)
+	}
+
+	err = fixForms(db, doc, lastUrl)
+	if err != nil {
+		log.Fatalln("Fix forms error", err)
+	}
+
+	htmlPage, err := doc.Html()
+	if err != nil {
+		log.Fatalln("Convert to html error:", err)
+	}
+
+	text, err := html2text.FromString(htmlPage)
+	if err != nil {
+		log.Fatalln("Html to text error:", err)
+	}
+	text += ""
+
+	fmt.Println(text)
+}
+
 func Get(db *sql.DB, jar *cookiejar.Jar, linkUrl string) {
 	client := &http.Client{Jar: jar}
 
@@ -135,38 +170,7 @@ func Get(db *sql.DB, jar *cookiejar.Jar, linkUrl string) {
 
 	defer resp.Body.Close()
 
-	utf8, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
-	if err != nil {
-		log.Fatalln("Encoding error:", err)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(utf8)
-	if err != nil {
-		log.Fatalln("Create document error:", err)
-	}
-
-	err = fixLinks(db, doc, lastUrl)
-	if err != nil {
-		log.Fatalln("Fix links error:", err)
-	}
-
-	err = fixForms(db, doc, lastUrl)
-	if err != nil {
-		log.Fatalln("Fix forms error", err)
-	}
-
-	htmlPage, err := doc.Html()
-	if err != nil {
-		log.Fatalln("Convert to html error:", err)
-	}
-
-	text, err := html2text.FromString(htmlPage)
-	if err != nil {
-		log.Fatalln("Html to text error:", err)
-	}
-	text += ""
-
-	fmt.Println(text)
+	handleResponse(db, resp, lastUrl)
 }
 
 func Form(db *sql.DB, jar *cookiejar.Jar, formID int64, formArgs []string) {
@@ -234,7 +238,12 @@ func Form(db *sql.DB, jar *cookiejar.Jar, formID int64, formArgs []string) {
 
 	if status >= 300 && status < 400 {
 		Get(db, jar, lastUrl.String())
+		return
 	}
+
+	defer resp.Body.Close()
+
+	handleResponse(db, resp, lastUrl)
 }
 
 func Link(db *sql.DB, jar *cookiejar.Jar, linkID int64, fromHistory bool) {
