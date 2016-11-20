@@ -9,13 +9,60 @@
 package storage
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/base64"
+	"encoding/gob"
 	"errors"
+	"log"
+	"net/http"
 	"reflect"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func toGOB64(m http.Cookie) string {
+	b := bytes.Buffer{}
+	e := gob.NewEncoder(&b)
+	err := e.Encode(m)
+	if err != nil {
+		panic(err)
+	}
+	return base64.StdEncoding.EncodeToString(b.Bytes())
+}
+
+func fromGOB64(str string) http.Cookie {
+	m := http.Cookie{}
+	by, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		panic(err)
+	}
+	b := bytes.Buffer{}
+	b.Write(by)
+	d := gob.NewDecoder(&b)
+	err = d.Decode(&m)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
+func serializeCookies(cookies []*http.Cookie) (s string) {
+	for _, c := range cookies {
+		s += toGOB64(*c) + " "
+	}
+	return
+}
+
+func deserializeCookies(s string) (cookies []*http.Cookie) {
+	gob64Objects := strings.Split(s, " ")
+	for _, g := range gob64Objects {
+		c := fromGOB64(g)
+		cookies = append(cookies, &c)
+	}
+	return
+}
 
 func OpenDB(path string) (db *sql.DB, err error) {
 	db, err = sql.Open("sqlite3", path)
@@ -40,7 +87,7 @@ func OpenDB(path string) (db *sql.DB, err error) {
 		"  `form_id` INTEGER, " +
 		"  `hidden`  BOOLEAN, " +
 		"  `value`   TEXT, " +
-		"  `name`   TEXT );")
+		"  `name`    TEXT );")
 	if err != nil {
 		return
 	}
@@ -49,6 +96,45 @@ func OpenDB(path string) (db *sql.DB, err error) {
 		"( `id`   INTEGER PRIMARY KEY AUTOINCREMENT, " +
 		"  `post` BOOLEAN, " +
 		"  `url`  TEXT );")
+	if err != nil {
+		return
+	}
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS `cookies` " +
+		"( `id`      INTEGER PRIMARY KEY AUTOINCREMENT, " +
+		"  `url`     BOOLEAN, " +
+		"  `cookies` TEXT );")
+
+	return
+}
+
+func AddCookies(db *sql.DB, url string, cookies []*http.Cookie) (err error) {
+	log.Println("Add cookies", url, cookies)
+	stmt, err := db.Prepare("INSERT INTO `cookies` " +
+		"(`url`, `cookies`) VALUES ($1, $2);")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(url, serializeCookies(cookies))
+	return
+}
+
+func GetCookies(db *sql.DB, url string) (cookies []*http.Cookie, err error) {
+	stmt, err := db.Prepare("SELECT `cookies` FROM `cookies` WHERE url=$1;")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	var rawCookies string
+	err = stmt.QueryRow(url).Scan(&rawCookies)
+	if err != nil {
+		return
+	}
+
+	cookies = deserializeCookies(rawCookies)
 
 	return
 }
