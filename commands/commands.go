@@ -199,7 +199,7 @@ func Form(db *sql.DB, formID int64, formArgs []string) {
 	}
 
 	for _, fa := range formArgs {
-		nameAndValue := strings.Split(fa, " ")
+		nameAndValue := strings.Split(fa, "=")
 		if len(nameAndValue) != 2 {
 			continue
 		}
