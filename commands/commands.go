@@ -132,6 +132,13 @@ func Get(db *sql.DB, linkUrl string) {
 
 	storage.AddHistoryURL(db, linkUrl)
 
+	if len(resp.Cookies()) != 0 {
+		err = storage.AddCookies(db, lastUrl.Host, resp.Cookies())
+		if err != nil {
+			log.Fatalln("Add cookies:", err)
+		}
+	}
+
 	defer resp.Body.Close()
 
 	utf8, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
@@ -230,6 +237,13 @@ func Form(db *sql.DB, formID int64, formArgs []string) {
 
 	var status int64
 	fmt.Sscanf(resp.Status, "%d", &status)
+
+	if status < 400 && len(resp.Cookies()) != 0 {
+		err = storage.AddCookies(db, lastUrl.Host, resp.Cookies())
+		if err != nil {
+			log.Fatalln("Add cookies:", err)
+		}
+	}
 
 	if status >= 300 && status < 400 {
 		Get(db, lastUrl.String())
