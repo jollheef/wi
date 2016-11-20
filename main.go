@@ -61,13 +61,30 @@ var (
 )
 
 func main() {
-	db, err := storage.OpenDB("/tmp/wi.db")
+	homePath, exists := os.LookupEnv("HOME")
+	var wiDir, widbPath, wijarPath string
+	if exists {
+		wiDir = homePath + "/.wi"
+		widbPath = wiDir + "/wi.db"
+		wijarPath = wiDir + "/wi.jar"
+	} else {
+		wiDir = "/tmp"
+		widbPath = "/tmp/wi.db"
+		wijarPath = "/tmp/wi.jar"
+	}
+
+	err := os.MkdirAll(wiDir, 0700)
+	if err != nil {
+		panic(err)
+	}
+
+	db, err := storage.OpenDB(widbPath)
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	os.Setenv("GOCOOKIES", "/tmp/wi.jar")
+	os.Setenv("GOCOOKIES", wijarPath)
 
 	jar, err := cookiejar.New(nil)
 	if err != nil {
