@@ -9,11 +9,13 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	"github.com/jollheef/wi/commands"
 	"github.com/jollheef/wi/storage"
 
+	cookiejar "github.com/juju/persistent-cookiejar"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -65,17 +67,26 @@ func main() {
 	}
 	defer db.Close()
 
+	os.Setenv("GOCOOKIES", "/tmp/wi.jar")
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	defer jar.Save()
+
 	switch kingpin.Parse() {
 	case "get":
-		commands.Get(db, *getUrl)
+		commands.Get(db, jar, *getUrl)
 	case "form":
-		commands.Form(db, *formID, *formArgs)
+		commands.Form(db, jar, *formID, *formArgs)
 	case "link":
-		commands.Link(db, *linkNo, *linkFromHistory)
+		commands.Link(db, jar, *linkNo, *linkFromHistory)
 	case "history":
 		commands.History(db, *historyListItems, 20, *historyListAll)
 	case "search":
 		// FIXME: currenlty supports only Google
-		commands.Get(db, "https://google.com/search?q="+strings.Join(*searchArgs, "+"))
+		commands.Get(db, jar, "https://google.com/search?q="+strings.Join(*searchArgs, "+"))
 	}
 }

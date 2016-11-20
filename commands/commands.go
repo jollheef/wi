@@ -21,6 +21,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jaytaylor/html2text"
+	cookiejar "github.com/juju/persistent-cookiejar"
 	"golang.org/x/net/html/charset"
 )
 
@@ -95,8 +96,8 @@ func fixForms(db *sql.DB, doc *goquery.Document, pageUrl *url.URL) (err error) {
 	return
 }
 
-func Get(db *sql.DB, linkUrl string) {
-	client := &http.Client{}
+func Get(db *sql.DB, jar *cookiejar.Jar, linkUrl string) {
+	client := &http.Client{Jar: jar}
 
 	var lastUrl *url.URL
 
@@ -131,13 +132,6 @@ func Get(db *sql.DB, linkUrl string) {
 	}
 
 	storage.AddHistoryURL(db, linkUrl)
-
-	if len(resp.Cookies()) != 0 {
-		err = storage.AddCookies(db, lastUrl.Host, resp.Cookies())
-		if err != nil {
-			log.Fatalln("Add cookies:", err)
-		}
-	}
 
 	defer resp.Body.Close()
 
@@ -175,7 +169,7 @@ func Get(db *sql.DB, linkUrl string) {
 	fmt.Println(text)
 }
 
-func Form(db *sql.DB, formID int64, formArgs []string) {
+func Form(db *sql.DB, jar *cookiejar.Jar, formID int64, formArgs []string) {
 	fields, formUrl, post, err := storage.GetForm(db, formID)
 	if err != nil {
 		log.Fatalln("Get form:", err)
@@ -215,7 +209,7 @@ func Form(db *sql.DB, formID int64, formArgs []string) {
 		urlData.Set(name, value)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{Jar: jar}
 
 	var lastUrl *url.URL
 
@@ -238,19 +232,12 @@ func Form(db *sql.DB, formID int64, formArgs []string) {
 	var status int64
 	fmt.Sscanf(resp.Status, "%d", &status)
 
-	if status < 400 && len(resp.Cookies()) != 0 {
-		err = storage.AddCookies(db, lastUrl.Host, resp.Cookies())
-		if err != nil {
-			log.Fatalln("Add cookies:", err)
-		}
-	}
-
 	if status >= 300 && status < 400 {
-		Get(db, lastUrl.String())
+		Get(db, jar, lastUrl.String())
 	}
 }
 
-func Link(db *sql.DB, linkID int64, fromHistory bool) {
+func Link(db *sql.DB, jar *cookiejar.Jar, linkID int64, fromHistory bool) {
 
 	var linkUrl string
 	var err error
@@ -265,7 +252,7 @@ func Link(db *sql.DB, linkID int64, fromHistory bool) {
 		log.Fatalln("Get link/history url error:", err)
 	}
 
-	Get(db, linkUrl)
+	Get(db, jar, linkUrl)
 }
 
 func History(db *sql.DB, argAmount, defaultAmount int64, all bool) {
