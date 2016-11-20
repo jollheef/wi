@@ -42,9 +42,9 @@ var (
 	get    = kingpin.Command("get", "Get url")
 	getUrl = get.Arg("url", "Url").Required().String()
 
-	post     = kingpin.Command("post", "Fill post form")
-	postID   = post.Arg("id", "Form ID").Required().Int64()
-	postArgs = SearchList(post.Arg("args", "Post form arguments"))
+	form     = kingpin.Command("form", "Fill form")
+	formID   = form.Arg("id", "Form ID").Required().Int64()
+	formArgs = SearchList(form.Arg("args", "Form arguments"))
 
 	link            = kingpin.Command("link", "Get link")
 	linkNo          = link.Arg("no", "Number").Required().Int64()
@@ -68,8 +68,8 @@ func main() {
 	switch kingpin.Parse() {
 	case "get":
 		commands.Get(db, *getUrl)
-	case "post":
-		commands.Post(db, *postID, *postArgs)
+	case "form":
+		commands.Form(db, *formID, *formArgs)
 	case "link":
 		commands.Link(db, *linkNo, *linkFromHistory)
 	case "history":
