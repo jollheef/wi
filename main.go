@@ -56,7 +56,7 @@ var (
 	historyListItems = historyList.Arg("items", "Amount of items").Int64()
 	historyListAll   = historyList.Flag("all", "Show all items").Bool()
 
-	search     = kingpin.Command("search", "Search engine (google by default)")
+	search     = kingpin.Command("search", "Search by duckduckgo")
 	searchArgs = SearchList(search.Arg("string", "String for search"))
 )
 
@@ -103,7 +103,6 @@ func main() {
 	case "history":
 		commands.History(db, *historyListItems, 20, *historyListAll)
 	case "search":
-		// FIXME: currenlty supports only Google
-		commands.Get(db, jar, "https://google.com/search?q="+strings.Join(*searchArgs, "+"))
+		commands.Get(db, jar, "https://duckduckgo.com/html/?q="+strings.Join(*searchArgs, "+"))
 	}
 }
