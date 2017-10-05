@@ -103,6 +103,6 @@ func main() {
 	case "history":
 		commands.History(db, *historyListItems, 20, *historyListAll)
 	case "search":
-		commands.Get(db, jar, "https://duckduckgo.com/html/?q="+strings.Join(*searchArgs, "+"))
+		commands.Get(db, jar, "https://duckduckgo.com/html/?kd=-1&q="+strings.Join(*searchArgs, "+"))
 	}
 }
