@@ -9,6 +9,8 @@
 package main
 
 import (
+	"context"
+	"net/http"
 	"os"
 	"strings"
 
@@ -17,7 +19,19 @@ import (
 
 	cookiejar "github.com/juju/persistent-cookiejar"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+
+	"github.com/cretz/bine/process"
+	"github.com/cretz/bine/tor"
+	"github.com/ipsn/go-libtor"
 )
+
+var creator = libtor.Creator
+
+type LibTorWrapper struct{}
+
+func (LibTorWrapper) New(ctx context.Context, args ...string) (process.Process, error) {
+	return creator.New(ctx, args...)
+}
 
 type searchList []string
 
@@ -41,6 +55,9 @@ func SearchList(settings kingpin.Settings) (target *[]string) {
 }
 
 var (
+	useTor = kingpin.Flag("tor", "Use embedded tor").Default("false").Bool()
+	ua     = kingpin.Flag("ua", "User-Agent").Default("Wi 0.1").String()
+
 	get    = kingpin.Command("get", "Get url")
 	getUrl = get.Arg("url", "Url").Required().String()
 
@@ -92,6 +109,30 @@ func main() {
 	}
 
 	defer jar.Save()
+
+	kingpin.Parse()
+
+	var t *tor.Tor
+	if *useTor {
+		t, err = tor.Start(nil, &tor.StartConf{
+			ProcessCreator: LibTorWrapper{},
+			DataDir:        wiDir + "/tor",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		defer t.Close()
+
+		dialer, err := t.Dialer(nil, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		commands.Transport = &http.Transport{DialContext: dialer.DialContext}
+	}
+
+	commands.UserAgent = *ua
 
 	switch kingpin.Parse() {
 	case "get":

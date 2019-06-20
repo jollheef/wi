@@ -25,6 +25,11 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
+var (
+	Transport *http.Transport = nil
+	UserAgent string
+)
+
 func fixLinks(db *sql.DB, doc *goquery.Document, pageUrl *url.URL) (err error) {
 
 	doc.Find("a").Each(func(i int, s *goquery.Selection) {
@@ -133,6 +138,9 @@ func handleResponse(db *sql.DB, resp *http.Response, lastUrl *url.URL) {
 
 func Get(db *sql.DB, jar *cookiejar.Jar, linkUrl string) {
 	client := &http.Client{Jar: jar}
+	if Transport != nil {
+		client.Transport = Transport
+	}
 
 	var lastUrl *url.URL
 
@@ -155,7 +163,7 @@ func Get(db *sql.DB, jar *cookiejar.Jar, linkUrl string) {
 		log.Fatalln(err)
 	}
 
-	req.Header.Set("User-Agent", "Wi 0.0")
+	req.Header.Set("User-Agent", UserAgent)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -214,6 +222,9 @@ func Form(db *sql.DB, jar *cookiejar.Jar, formID int64, formArgs []string) {
 	}
 
 	client := &http.Client{Jar: jar}
+	if Transport != nil {
+		client.Transport = Transport
+	}
 
 	var lastUrl *url.URL
 
