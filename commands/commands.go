@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/jollheef/wi/storage"
+	"code.dumpstack.io/tools/wi/storage"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jaytaylor/html2text"

@@ -14,8 +14,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jollheef/wi/commands"
-	"github.com/jollheef/wi/storage"
+	"code.dumpstack.io/tools/wi/commands"
+	"code.dumpstack.io/tools/wi/storage"
 
 	cookiejar "github.com/juju/persistent-cookiejar"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
