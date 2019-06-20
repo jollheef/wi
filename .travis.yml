@@ -1,0 +1,14 @@
+language: go
+
+go:
+  - 1.x
+  - master
+
+os:
+  - linux
+
+dist:
+  - xenial
+
+env:
+  - GO111MODULE=on
