@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jollheef/wi.svg?branch=master)](https://travis-ci.org/jollheef/wi)
+
 # Tiny¹ non-interactive cli browser
 
 [1] Actually, that's not true anymore.
