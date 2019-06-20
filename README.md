@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1c1b7414632b439eb6e1ffab0806c541)](https://app.codacy.com/app/jollheef/wi?utm_source=github.com&utm_medium=referral&utm_content=jollheef/wi&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/jollheef/wi.svg?branch=master)](https://travis-ci.org/jollheef/wi)
 
 # Tiny¹ non-interactive cli browser
